@@ -43,22 +43,36 @@
 
 <body>
 <div class="w3-container">
-<h1>RGB Color</h1>
+<h1>Weather</h1>
 <div class="w3-cell-row">
 <div class="w3-container w3-cell w3-mobile">
 <p><input type="range" min="0" max="255" value="0" class="slider" id="redSlider"></p>
 <p><input type="range" min="0" max="255" value="0" class="slider" id="greenSlider"></p>
 <p><input type="range" min="0" max="255" value="0" class="slider" id="blueSlider"></p>
+<p><input type="button" id="refreshNow" value="Refresh Now" onclick="getTemp()"></p>
 </div>
 <div class="w3-container w3-cell w3-mobile" style="background-color:black" id="colorShow">
 <div></div>
+<div id="tempDisplay">Temp:</div>
 </div>
 </div>
 <p>Or pick a color: <input type="color" id="pickColor"></p>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.3/socket.io.js"></script>
 <script src="https://www.w3schools.com/lib/w3color.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
 <script>
+function getTemp ( ) {
+  var tempDisplay = document.getElementById("tempDisplay");
+  $.get('http://10.0.0.105:3000/data', {}, function(data){
+        console.log(data);
+    var node = document.createElement("P");
+    var textnode = document.createTextNode("Temp: "+data.temperature.toFixed(2)+" Humidity: "+data.humidity.toFixed(2));
+    node.appendChild(textnode);
+    tempDisplay.appendChild(node);
+   });
+}
+
 var socket = io(); //load socket.io-client and connect to the host that serves the page
 var rgb = w3color("rgb(0,0,0)"); //we use the w3color.js library to keep the color as an object
 window.addEventListener("load", function(){ //when page loads
@@ -66,6 +80,8 @@ window.addEventListener("load", function(){ //when page loads
   var gSlider = document.getElementById("greenSlider");
   var bSlider = document.getElementById("blueSlider");
   var picker = document.getElementById("pickColor");
+
+
 
   rSlider.addEventListener("change", function() { //add event listener for when red slider changes
     rgb.red = this.value; //update the RED color according to the slider

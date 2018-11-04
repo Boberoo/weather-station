@@ -2,19 +2,34 @@ var http = require('http').createServer(handler); //require http server, and cre
 var fs = require('fs'); //require filesystem module
 var io = require('socket.io')(http); //require socket.io module and pass the http object (server)
 var Gpio = require('pigpio').Gpio; //include pigpio to interact with the GPIO
+var express = require('express');
+var app = express();
+
+app.use(function(req, res, next) {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  next();
+});
+
+app.get('/data', function(req, res){
+  res.send(readSensor()); 
+});
+
+//Don't use GPIO 27 for reading temp, has a special meaning
 
 var rpiDhtSensor = require('rpi-dht-sensor');
  
-var dht = new rpiDhtSensor.DHT11(27);
+var dht = new rpiDhtSensor.DHT11(01);
  
-function read () {
+function readSensor() {
   var readout = dht.read();
  
     console.log('Temperature: ' + readout.temperature.toFixed(2) + 'C, ' +
         'humidity: ' + readout.humidity.toFixed(2) + '%');
 //    setTimeout(read, 5000);
+  return readout;
 }
-read();
+readSensor();
 
 //var sensor = require('node-dht-sensor');
 
@@ -50,9 +65,12 @@ ledRed.digitalWrite(1); // Turn RED LED off
 ledGreen.digitalWrite(1); // Turn GREEN LED off
 ledBlue.digitalWrite(1); // Turn BLUE LED off
 
+app.listen(3000);
 http.listen(8080); //listen to port 8080
 
 function handler (req, res) { //what to do on requests to port 8080
+  console.log(req);
+  
   fs.readFile(__dirname + '/public/index.html', function(err, data) { //read file rgb.html in public folder
     if (err) {
       res.writeHead(404, {'Content-Type': 'text/html'}); //display 404 on error
