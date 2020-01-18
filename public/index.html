@@ -46,9 +46,9 @@
 <h1>Weather</h1>
 <div class="w3-cell-row">
 <div class="w3-container w3-cell w3-mobile">
-<p><input type="range" min="0" max="255" value="0" class="slider" id="redSlider"></p>
-<p><input type="range" min="0" max="255" value="0" class="slider" id="greenSlider"></p>
-<p><input type="range" min="0" max="255" value="0" class="slider" id="blueSlider"></p>
+<p><input type="range" min="0" max="255" value="150" class="slider" id="redSlider"></p>
+<p><input type="range" min="0" max="255" value="150" class="slider" id="greenSlider"></p>
+<p><input type="range" min="0" max="255" value="150" class="slider" id="blueSlider"></p>
 <p><input type="button" id="refreshNow" value="Refresh Now" onclick="getTemp()"></p>
 </div>
 <div class="w3-container w3-cell w3-mobile" style="background-color:black" id="colorShow">
@@ -56,7 +56,7 @@
 <div id="tempDisplay">Temp:</div>
 </div>
 </div>
-<p>Or pick a color: <input type="color" id="pickColor"></p>
+<p>Or pick a color: <input type="color" value="#AAAAAA" id="pickColor"></p>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.3/socket.io.js"></script>
 <script src="https://www.w3schools.com/lib/w3color.js"></script>
@@ -64,7 +64,7 @@
 <script>
 function getTemp ( ) {
   var tempDisplay = document.getElementById("tempDisplay");
-  $.get('http://10.0.0.105:3000/data', {}, function(data){
+  $.get('http://raspberrypi-bob:3000/data', {}, function(data){
         console.log(data);
     var node = document.createElement("P");
     var textnode = document.createTextNode("Temp: "+data.temperature.toFixed(2)+" Humidity: "+data.humidity.toFixed(2));
@@ -98,16 +98,25 @@ window.addEventListener("load", function(){ //when page loads
     colorShow.style.backgroundColor = rgb.toRgbString(); //update the "Current color"
     socket.emit("rgbLed", rgb); //send the updated color to RGB LED via WebSocket
   });
-  picker.addEventListener("input", function() { //add event listener for when colorpicker changes
-    rgb.red = w3color(this.value).red; //Update the RED color according to the picker
-    rgb.green = w3color(this.value).green; //Update the GREEN color according to the picker
-    rgb.blue = w3color(this.value).blue; //Update the BLUE color according to the picker
+
+  function updateColour() {
+    rgb.red = w3color(picker.value).red; //Update the RED color according to the picker
+    rgb.green = w3color(picker.value).green; //Update the GREEN color according to the picker
+    rgb.blue = w3color(picker.value).blue; //Update the BLUE color according to the picker
     colorShow.style.backgroundColor = rgb.toRgbString();  //update the "Current color"
     rSlider.value = rgb.red;  //Update the RED slider position according to the picker
     gSlider.value = rgb.green;  //Update the GREEN slider position according to the picker
     bSlider.value = rgb.blue;  //Update the BLUE slider position according to the picker
-   socket.emit("rgbLed", rgb);  //send the updated color to RGB LED via WebSocket
+    socket.emit("rgbLed", rgb);  //send the updated color to RGB LED via WebSocket
+  }
+
+  picker.addEventListener("input", function() { //add event listener for when colorpicker changes
+      updateColour();  
   });
+
+  updateColour();  
+
+
 });
 </script>
 </html>
