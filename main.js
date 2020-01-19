@@ -25,8 +25,9 @@ app.get('/history', function(req, res){
       res.writeHead(404, {'Content-Type': 'text/html'}); //display 404 on error
       return res.end("404 Not Found");
     }
-    res.writeHead(200, {'Content-Type': 'application/json'}); //write HTML
-    res.write(data); //write JSON data from history.dat
+    res.writeHead(200, {'Content-Type': 'application/json'}); 
+    res.write(data
+); //write JSON data from history.dat
     return res.end();
   });
 
@@ -71,47 +72,61 @@ function readSensor() {
   return readout;
 }
 
-function readSensorAndSave() {
-  var  data = { readout : {temperature: 0, humidity: 0}, date_time: new Date().toISOString() }
-  data.readout = readSensor();
-
+function saveHistory (fileName, data) {
   var history = { readouts : [], hightemp : null, lowtemp : null };
 
- fs.readFile(__dirname + '/public/history.dat', function(err, contents) { //read file rgb.html in public folder
-   if (!err)
-   {
-     history = JSON.parse(contents);
-   }
+  fs.readFile(__dirname + fileName, function(err, contents) { 
+    if (!err)
+    {
+      try {
+        history = JSON.parse(contents);
+      }
+      catch (error) {
+        console.log(error.message);
+        console.log(__dirname + fileName);
+        console.log(contents);
+      }
+    }
 
-   if (!history) {
-     history = { readouts : [], hightemp : null, lowtemp : null };
-   }
+    if (!history) {
+      history = { readouts : [], hightemp : null, lowtemp : null };
+    }
 
-  if (!history.readouts){
-    history.readouts = [];
-  }
+    if (!history.readouts){
+      history.readouts = [];
+    }
 
-   history.readouts.push(data);
+    history.readouts.push(data);
 
-   if (data.readout.errors == 0){
-     if (!(history.hightemp) || (history.hightemp.temperature <= data.readout.temperature)){
-       history.hightemp = data;
-     }
-   }
+    if (data.errors == 0){
+       if (!(history.hightemp) || (history.hightemp.temperature <= data.temperature)){
+         history.hightemp = data;
+       }
+    }
 
-   if (!(history.lowtemp) || (history.lowtemp.temperature >= data.readout.temperature)){
-     history.lowtemp = data.readout;
-   }
-
-
-   if (history.readouts.length > 100){
-     history.readouts.shift();
-   }
-
-   fs.writeFile(__dirname + '/public/history.dat', JSON.stringify(history), function(err, history){});
+    if (!(history.lowtemp) || (history.lowtemp.temperature >= data.temperature)){
+      history.lowtemp = data;
+    }
 
 
-  });
+    if (history.readouts.length > 5000){
+      history.readouts.shift();
+    }
+
+    fs.writeFile(__dirname + fileName, JSON.stringify(history), function(err, history){});
+
+  }); //NB. all code must be in the success callback, this is an aync function
+}
+
+function readSensorAndSave() {
+  var d = new Date();
+  var data = { readout : {temperature: 0, humidity: 0} };
+
+  data.readout = readSensor();
+  data.readout.datetime = d.toISOString();
+
+  saveHistory('/public/history.dat', data.readout); //last 5000 temps, and all-time high/low
+  saveHistory('/public/'+d.toISOString().slice(0,10)+'.dat', data.readout); //today's temps, and also today's high/low
 
 
   return; //till we get DB working
@@ -129,7 +144,7 @@ function readSensorAndSave() {
         db.close();
       });
     });
-  };
+  }
 
 
 //  if (timeout) {
